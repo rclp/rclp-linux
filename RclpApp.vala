@@ -1,4 +1,6 @@
-using Gtk;
+errordomain RclpError {
+    CLOUD_NOT_RUN
+}
 
 namespace Rclp {
     public class App : Gtk.Application {
@@ -10,40 +12,11 @@ namespace Rclp {
         private const string NOTIFICATION_ICON = "dialog-information";
 
         private bool was_activated = false;
+        private string currentPasteValue = "";
 
         public App () {
             Object(application_id: APP_ID,
                    flags: ApplicationFlags.FLAGS_NONE);
-        }
-
-        protected static bool run_rclp_paste () {
-            try {
-                string[] spawn_env = Environ.get ();
-                var current_dir = Environment.get_current_dir ();
-                string rclp_stdout;
-                string rclp_stderr;
-                int rclp_status;
-
-                Process.spawn_sync (current_dir,
-                                    RCLP_COMMAND,
-                                    spawn_env,
-                                    SpawnFlags.SEARCH_PATH,
-                                    null,
-                                    out rclp_stdout,
-                                    out rclp_stderr,
-                                    out rclp_status);
-
-                print ("stdout:\n");
-                print (rclp_stdout);
-                print ("stderr:\n");
-                print (rclp_stderr);
-                print ("status: %d\n", rclp_status);
-            } catch (SpawnError e) {
-                print ("Error: %s\n", e.message);
-                return false;
-            }
-
-            return true;
         }
 
         protected override void activate () {
@@ -64,21 +37,64 @@ namespace Rclp {
             window.show_all ();
 
             // setup a timer to call rclp
-            stdout.printf ("setting up a timer\n");
+            debug ("setting up a timer");
             var time = new TimeoutSource (RCLP_PASTE_INTERVAL);
             time.set_callback (() => {
-                stdout.printf ("calling rclp!\n");
-                var result = run_rclp_paste ();
-                stdout.printf (@"rclp result: $(result)\n");
-
-                if (!result) {
+                debug ("calling rclp!");
+                var newPasteValue = "";
+                try {
+                    newPasteValue = run_rclp_paste ();
+                } catch (RclpError error) {
+                    warning ("Failed to run rclp, stopping it");
                     show_notification("rclp not updated", "failed to update");
+                    return Source.REMOVE;
                 }
 
-                return result ? Source.CONTINUE : Source.REMOVE;
+                debug (@"rclp: current=$(currentPasteValue), new=$(newPasteValue)");
+                var previousPasteValue = currentPasteValue;
+                currentPasteValue = newPasteValue;
+
+                if (previousPasteValue != currentPasteValue) {
+                    show_notification("New paste value",
+                                      "rclp detected a new paste value!");
+                }
+
+                return Source.CONTINUE;
             });
             time.attach ();
         }
+
+        private string run_rclp_paste () throws RclpError {
+            var pastedValue = "";
+            try {
+                string[] spawn_env = Environ.get ();
+                var current_dir = Environment.get_current_dir ();
+                string rclp_stdout;
+                string rclp_stderr;
+                int rclp_status;
+
+                Process.spawn_sync (current_dir,
+                                    RCLP_COMMAND,
+                                    spawn_env,
+                                    SpawnFlags.SEARCH_PATH,
+                                    null,
+                                    out rclp_stdout,
+                                    out rclp_stderr,
+                                    out rclp_status);
+
+                debug ("stdout: %s", rclp_stdout);
+                debug ("stderr: %s", rclp_stderr);
+                debug ("status: %d", rclp_status);
+
+                pastedValue = rclp_stdout.strip ();
+            } catch (SpawnError e) {
+                warning ("error when running rclp: %s", e.message);
+                throw new RclpError.CLOUD_NOT_RUN ("Failed to run rclp");
+            }
+
+            return pastedValue;
+        }
+
 
         private void show_notification (string title, string content) {
             try {
@@ -87,13 +103,11 @@ namespace Rclp {
                                                             NOTIFICATION_ICON);
                 notification.show ();
             } catch (Error e) {
-                error ("Error: %s", e.message);
+                warning ("error when showing a notification: %s", e.message);
             }
         }
 
         public static int main (string[] args) {
-            stdout.printf ("main\n");
-
             var app = new App ();
             return app.run (args);
         }
