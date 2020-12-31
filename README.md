@@ -12,3 +12,18 @@ $ meson build --prefix=/usr
 $ cd build
 $ ninja
 ```
+
+Execute `rclp-linux` built as result of the build process for testing.
+
+
+## debugging
+
+To show all debug messages:
+```
+$ G_MESSAGES_DEBUG=all rclp-linux
+```
+
+To visually inspect GTK widgets:
+```
+$ GTK_DEBUG=interactive rclp-linux
+```
