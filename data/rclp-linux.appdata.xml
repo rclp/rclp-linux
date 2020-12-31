@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2020 Atsuya Takagi <asoftonight@gmail.com> -->
+<component type="desktop">
+  <id>com.github.rclp.rclp-linux</id>
+  <metadata_license>CC0</metadata_license>
+  <name>rclp</name>
+  <summary>rclp client for Linux</summary>
+  <description>
+    <p>rclp lets you copy from one computer and paste to another computer by using a remote clipboard.</p>
+  </description>
+
+  <custom>
+    <value key="x-appcenter-color-primary">#603461</value>
+    <value key="x-appcenter-color-primary-text">rgb(255, 255, 255)</value>
+    <value key="x-appcenter-suggested-price">5</value>
+  </custom>
+</component>

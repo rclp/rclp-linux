@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=rclp
+GenericName=rclp App
+Comment=rclp client for Linux
+Categories=Utility;
+Exec=com.github.rclp.rclp-linux
+Icon=application-default-icon
+Terminal=false
+Type=Application
+Keywords=;
