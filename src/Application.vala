@@ -1,9 +1,9 @@
-errordomain RclpError {
-    CLOUD_NOT_RUN
-}
-
 namespace Rclp {
-    public class App : Gtk.Application {
+    errordomain RclpError {
+        CLOUD_NOT_RUN
+    }
+
+    public class Application : Gtk.Application {
         private const string APP_ID = "app.rclp.app.linux.RclpApp";
         private const int RCLP_PASTE_INTERVAL = 20000;
         private const string[] RCLP_COMMAND = {
@@ -14,9 +14,9 @@ namespace Rclp {
         private bool was_activated = false;
         private string current_paste_value = "";
 
-        public App () {
-            Object(application_id: APP_ID,
-                   flags: ApplicationFlags.FLAGS_NONE);
+        public Application () {
+            Object (application_id: APP_ID,
+                    flags: ApplicationFlags.FLAGS_NONE);
         }
 
         protected override void activate () {
@@ -61,7 +61,7 @@ namespace Rclp {
                     new_paste_value = run_rclp_paste ();
                 } catch (RclpError error) {
                     warning ("Failed to run rclp, stopping it");
-                    show_notification("rclp not updated", "failed to update");
+                    show_notification ("rclp not updated", "failed to update");
                     return Source.REMOVE;
                 }
 
@@ -70,7 +70,7 @@ namespace Rclp {
                 current_paste_value = new_paste_value;
 
                 if (previous_paste_value != current_paste_value) {
-                    show_notification("New paste value",
+                    show_notification ("New paste value",
                                       "rclp detected a new paste value!");
                 }
 
@@ -123,7 +123,7 @@ namespace Rclp {
         }
 
         public static int main (string[] args) {
-            var app = new App ();
+            var app = new Application ();
             return app.run (args);
         }
     }
