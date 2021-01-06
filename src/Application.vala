@@ -4,7 +4,7 @@ namespace Rclp {
     }
 
     public class Application : Gtk.Application {
-        private const string APP_ID = "app.rclp.app.linux.RclpApp";
+        private const string APP_ID = "com.github.rclp.rclp-linux";
         private const int RCLP_PASTE_INTERVAL = 20000;
         private const string[] RCLP_COMMAND = {
             "n", "exec", "lts", "rclp", "-p"
@@ -27,31 +27,63 @@ namespace Rclp {
             this.was_activated = true;
 
             Notify.init ("rclp client for Linux");
+            show_main_window ();
+            setup_timer ();
+        }
 
-            var window = new Gtk.ApplicationWindow (this);
-            window.name = "rclp-main-window";
-            window.title = "rclp";
+        private void show_main_window () {
+            var window = new Gtk.ApplicationWindow (this) {
+                title = "rclp",
+                name = "rclp-main-window"
+            };
+
+            var quit_action = new SimpleAction ("quit", null);
+            add_action (quit_action);
+            set_accels_for_action ("app.quit", {"<Control>q", "<Control>w"});
+            quit_action.activate.connect (() => {
+                window.destroy ();
+            });
+
+            var button = new Gtk.Button.from_icon_name ("process-stop", Gtk.IconSize.LARGE_TOOLBAR) {
+                action_name = "app.quit",
+                tooltip_markup = Granite.markup_accel_tooltip (
+                    get_accels_for_action ("app.quit"),
+                    "Quit"
+                )
+            };
+            var headerbar = new Gtk.HeaderBar () {
+                show_close_button = true
+            };
+            headerbar.add (button);
+            window.set_titlebar (headerbar);
 
             try {
-                //var label = new Gtk.Label ("Hello, GTK");
-                var pixbuf = new Gdk.Pixbuf.from_file_at_scale ("../rclp-product-logo.png", 250, -1, true);
+                var pixbuf = new Gdk.Pixbuf.from_file_at_scale ("../rclp-product-logo.png",
+                                                                250,
+                                                                -1,
+                                                                true);
                 var image = new Gtk.Image.from_pixbuf (pixbuf);
                 window.add (image);
             } catch (Error e) {
                 warning (@"Error loading image: $(e.message)");
             }
 
-            var css_provider = new Gtk.CssProvider ();
-            css_provider.load_from_path ("../rclp-linux.css");
+            try {
+                var css_provider = new Gtk.CssProvider ();
+                css_provider.load_from_path ("../rclp-linux.css");
 
-            var screen = window.get_screen ();
-            Gtk.StyleContext.add_provider_for_screen (screen,
-                                                      css_provider,
-                                                      Gtk.STYLE_PROVIDER_PRIORITY_USER);
+                var screen = window.get_screen ();
+                Gtk.StyleContext.add_provider_for_screen (screen,
+                                                          css_provider,
+                                                          Gtk.STYLE_PROVIDER_PRIORITY_USER);
+            } catch (Error e) {
+                warning (@"Error loading and applying css: $(e.message)");
+            }
 
             window.show_all ();
+        }
 
-            // setup a timer to call rclp
+        private void setup_timer () {
             debug ("setting up a timer");
             var time = new TimeoutSource (RCLP_PASTE_INTERVAL);
             time.set_callback (() => {
